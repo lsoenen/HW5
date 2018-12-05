@@ -17,7 +17,7 @@ app.config['SECRET_KEY'] = 'hard to guess string from si364'
 ## TODO 364: Create a database in postgresql in the code line below, and fill in your app's database URI. It should be of the format: postgresql://localhost/YOUR_DATABASE_NAME
 
 ## Your final Postgres database should be your uniqname, plus HW5, e.g. "jczettaHW5" or "maupandeHW5"
-app.config["SQLALCHEMY_DATABASE_URI"] = ""
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://localhost/lsoenenHW5"
 ## Provided:
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -64,14 +64,20 @@ class TodoListForm(FlaskForm):
     submit = SubmitField("Submit")
 
 # TODO 364: Define an UpdateButtonForm class for use to update todo items
-
+class UpdateButtonForm(FlaskForm):
+    submit = SubmitField('Update')
 
 
 # TODO 364: Define a form class for updating the priority of a todolist item
 #(HINT: What class activity you have done before is this similar to?)
+class UpdatePriorityForm(FlaskForm):
+    new_priority = StringField('What is the new priority of the item?', validators=[Required()])
+    submit = SubmitField('Update')
 
 
 # TODO 364: Define a DeleteButtonForm class for use to delete todo items
+class DeleteButtonForm(FlaskForm):
+    submit = SubmitField('Delete')
 
 
 
@@ -143,7 +149,16 @@ def one_list(ident):
 # TODO 364: Complete route to update an individual ToDo item's priority
 @app.route('/update/<item>',methods=["GET","POST"])
 def update(item):
-    pass # Replace with code
+    form = UpdatePriorityForm()
+    if form.validate_on_submit():
+        new_priority = form.new_priority.data
+        i = TodoItem.query.filter_by(id= item).first()
+        i.priority = new_priority
+        db.session.commit()
+        flash("Updated priority of " + i.description)
+        return redirect(url_for('all_lists'))
+    return render_template('update_item.html', item_name = item, form=form)
+
     # This code should use the form you created above for updating the specific item and manage the process of updating the item's priority.
     # Once it is updated, it should redirect to the page showing all the links to todo lists.
     # It should flash a message: Updated priority of <the description of that item>
@@ -154,7 +169,11 @@ def update(item):
 # TODO 364: Complete route to delete a whole ToDoList
 @app.route('/delete/<lst>',methods=["GET","POST"])
 def delete(lst):
-    pass # Replace with code
+    l = TodoList.query.filter_by(id = lst).first()
+    db.session.delete(l)
+    db.session.commit()
+    flash("Successfully deleted {}".format(l.title))
+    return redirect(url_for('all_lists'))
     # This code should successfully delete the appropriate todolist
     # Should flash a message about what was deleted, e.g. Deleted list <title of list>
     # And should redirect the user to the page showing all the todo lists
